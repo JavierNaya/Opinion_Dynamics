@@ -6,7 +6,7 @@ Created on Wed Nov 25 17:22:54 2020
 
 @author: DJ LAV
 
-version: 1
+version: 2
 """
 # %% Description
 
@@ -23,6 +23,9 @@ Then there are 4 sections containing the different models used in the project:
 
 In each of those sections you can find a setup part, this is where you need to specify all the parameters you want to use to run the code. Everything else can be left alone!
 To use any model, just run the entire section after choosing the parameters.
+
+If you are using spyder, you may need to change the following setting to have the animation of the coevolution network display correctly:
+    Open spyder preferences and then go to IPython Console > Graphics > Backend and change it from to "Automatic".
 '''
 
 
@@ -30,6 +33,8 @@ To use any model, just run the entire section after choosing the parameters.
 # %% General setup and definition of functions
 
 import numpy as np
+import random
+import matplotlib.animation as animation
 from matplotlib import pyplot as plt
 import copy
 import scipy.stats as stats
@@ -39,8 +44,8 @@ import scipy.stats as stats
 from matplotlib import rcParams
 rcParams.update({'figure.autolayout': True})
 
-#set size of the graphs
-rcParams['figure.figsize'] = 20, 20
+#activate to make the graphs bigger
+#rcParams['figure.figsize'] = 20, 20
 
 
 
@@ -363,6 +368,21 @@ def bifurcation(pop):
     return final_values
 
 
+def gaussmf(x, sigma=1, scale=1, mean=0): #used for coevolution
+    return scale * np.exp(-np.square(x - mean) / (2 * sigma ** 2))
+
+
+def update_hist(num, data): #used for coevolution
+    plt.cla()
+    
+    axes = plt.gca()
+    axes.set_ylim([0, 50])
+    plt.xlabel("Opinions")
+    plt.ylabel("Occurences")
+    plt.title("t= "+str(num))
+    plt.hist(data[num], 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
+
+
 
 # %% 
 ########################
@@ -462,11 +482,15 @@ for i in range(control_pop.pop_size):
 plt.xlabel("Rounds")
 plt.ylabel("Opinion")
 plt.title("Control Population\n pop_size="+ str(control_pop.pop_size) + " comm_factor=" + str(control_pop.comm_factor) + "\n #comm: " + str(control_pop.num_of_comm) + " comm_size: " + str(control_pop.comm_size) + " connectedness:" + str(control_pop.connectedness) + "\n #conn: " + str(control_pop.num_of_conn) + " #celebs: " + str(control_pop.num_of_celebs) + "\n conn_prob: " + str(control_pop.conn_prob) + " conn_strength: " + str(control_pop.conn_strength))
+plt.show()
+#save png
+#plt.savefig("celeb_" + number + ("_control_opinions.png"))
 
-plt.savefig("celeb_" + number + ("_control_opinions.png"))
 plt.figure(2)
 hinton(np.matrix.transpose(control_pop.mat))
-plt.savefig("celeb_" + number + ("_control_matrix.png"))
+plt.show
+#save png
+#plt.savefig("celeb_" + number + ("_control_matrix.png"))
 
 
 #create graphs for celebrity matrix
@@ -477,12 +501,15 @@ for i in range(celeb_pop.pop_size):
 plt.xlabel("Rounds")
 plt.ylabel("Opinion")
 plt.title("Celebrity Population\n pop_size="+ str(celeb_pop.pop_size) + " comm_factor=" + str(celeb_pop.comm_factor) + "\n #comm: " + str(celeb_pop.num_of_comm) + " comm_size: " + str(celeb_pop.comm_size) + " connectedness:" + str(celeb_pop.connectedness) + "\n #conn: " + str(celeb_pop.num_of_conn)+ " #celebs: " + str(celeb_pop.num_of_celebs) + "\n conn_prob: " + str(celeb_pop.conn_prob) + " conn_strength: " + str(celeb_pop.conn_strength))
-
-plt.savefig("celeb_" + number + ("_celeb_opinions.png"))
+plt.show()
+#save png
+#plt.savefig("celeb_" + number + ("_celeb_opinions.png"))
 
 plt.figure(4)
 hinton(np.matrix.transpose(celeb_pop.mat))
-plt.savefig("celeb_" + number + ("_celeb_matrix.png"))
+plt.show()
+#save png
+#plt.savefig("celeb_" + number + ("_celeb_matrix.png"))
 
 
 #####
@@ -734,3 +761,135 @@ plt.figure(2)
 plt.plot(np.mean(pop_bc.opinions,0))
 
 print("DONE")
+
+
+# %% 
+########################
+# Model 3: coevolution network
+########################
+
+
+#####
+# setup
+#####
+
+k = 4
+gamma = 10
+phi = 0.1
+
+#number of people
+N=100
+
+
+
+#####
+# initalize & run
+#####
+
+
+M= round(N*k/2)
+G = round(N/gamma)
+
+#opinions of people
+x = [random.randint(1, G) for i in range(N)]
+m = np.zeros((N, N))
+
+
+l = M
+while l>0:
+    i = random.randint(0, N-1)
+    j = random.randint(0, N-1)
+    if m[i][j]==0 and i!=j:
+        m[i][j]=1
+        m[j][i]=1
+    l=l-1
+
+evo = [list(x)]
+t_end = 1000
+t=0
+
+while t<=t_end:
+    last_x = evo[-1]
+    i = random.randint(0, N-1)
+
+    if sum(m[i]) != 0: #do nothing if i has no edges 
+        h = [] # same opinions
+        f=0
+
+        for f in range(N):
+            if x[f] == x[i] and f!=i:
+                h.append(f)
+
+        c=[] #other end of vertices
+        r=0
+        for r in range(N):
+            if m[r][i]==1:
+                c.append(r)
+        
+        if random.random() <= phi and h:
+            q=random.randint(0, len(c)-1)
+            hh=h
+            s=0
+            while s==0 and sum(hh)>0:
+                j=random.randint(0, len(hh)-1)
+                while hh[j]==0:
+                    j=random.randint(0, len(hh)-1)
+                if m[hh[j]][i]==0:
+                    s=1
+                else:
+                    hh[j]=0
+
+            m[i][c[q]] =0
+            m[c[q]][i]=0
+            m[i][h[j]]=1
+            m[h[j]][i]=1
+        else:
+            s=0
+            while s==0:
+                j=random.randint(0, len(c)-1)
+                a=random.random()
+                b=random.random()
+                if evo[0][i]==x[c[j]]:
+                    s=1 
+                    x[i]=x[c[j]]
+                elif a <= 1.666*abs(1/(evo[0][i]-x[c[j]])) and b <= gaussmf(sum([l[c[j]] for l in m]), M*0.3, M/2):
+                    s=1
+                    x[i]=x[c[j]]
+                else:
+                    x[i]=x[c[j]]
+            
+    else:
+        t=t-1
+    
+    evo.append(x.copy())
+    t=t+1
+
+
+
+evo_hist = evo[-1]
+
+plt.hist(evo_hist, 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
+plt.show()
+
+
+
+
+number_of_frames = round(len(evo)/2)
+data = evo
+
+
+#####
+# visualize
+#####
+
+fig = plt.figure()
+axes = plt.gca()
+axes.set_ylim([0, 50])
+plt.xlabel("Opinions")
+plt.ylabel("Occurences")
+plt.title("t= 0")
+hist = plt.hist(data[0], 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
+
+
+animation = animation.FuncAnimation(fig, update_hist, number_of_frames, fargs=(data, ) )
+plt.show()
