@@ -768,11 +768,9 @@ print("DONE")
 # Model 3: coevolution network
 ########################
 
-
 #####
 # setup
 #####
-
 k = 4
 gamma = 10
 phi = 0.1
@@ -780,13 +778,9 @@ phi = 0.1
 #number of people
 N=100
 
-
-
 #####
 # initalize & run
 #####
-
-
 M= round(N*k/2)
 G = round(N/gamma)
 
@@ -865,17 +859,13 @@ while t<=t_end:
     t=t+1
 
 
-
 evo_hist = evo[-1]
 
 plt.hist(evo_hist, 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
+plt.xlabel("Opinions")
+plt.ylabel("Occurences")
+plt.title("t= "+str(len(evo)-1))
 plt.show()
-
-
-
-
-number_of_frames = round(len(evo)/2)
-data = evo
 
 
 #####
@@ -888,8 +878,8 @@ axes.set_ylim([0, 50])
 plt.xlabel("Opinions")
 plt.ylabel("Occurences")
 plt.title("t= 0")
-hist = plt.hist(data[0], 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
+hist = plt.hist(evo[0], 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
 
 
-animation = animation.FuncAnimation(fig, update_hist, number_of_frames, fargs=(data, ) )
+animation = animation.FuncAnimation(fig, update_hist, fargs=(evo, ) )
 plt.show()
