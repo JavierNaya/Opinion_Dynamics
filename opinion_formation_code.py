@@ -6,7 +6,7 @@ Created on Wed Nov 25 17:22:54 2020
 
 @author: DJ LAV
 
-version: 2
+version: 3
 """
 # %% Description
 
@@ -861,6 +861,7 @@ while t<=t_end:
 
 evo_hist = evo[-1]
 
+plt.figure()
 plt.hist(evo_hist, 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
 plt.xlabel("Opinions")
 plt.ylabel("Occurences")
