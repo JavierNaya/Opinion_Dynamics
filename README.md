@@ -1,5 +1,4 @@
-# Opinion Formation
-comparing different models
+# Opinion Formation: comparing different models
 
 By DJ LAV: Agnese Sacchi, Duy Lai, Javier Naya, Lukas Keller, Valentyna Pavliv
 
