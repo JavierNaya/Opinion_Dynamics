@@ -72,7 +72,7 @@ class population:
         elif distribution == "normal":
             #truncated normal distribution
             lower, upper = 0, 1
-            mu, sigma = .3, 0.5
+            mu, sigma = .5, 0.25
         
             initial_values = stats.truncnorm(
             (lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma).rvs(pop_size)
@@ -80,8 +80,8 @@ class population:
         elif distribution == "2normal":
             #two nodes of a normal 
             lower, upper = 0, 1
-            mu_l, sigma_l = .2, 0.2
-            mu_r, sigma_r = .8, 0.2
+            mu_l, sigma_l = .2, 0.15
+            mu_r, sigma_r = .8, 0.15
             
             initial_values_l = stats.truncnorm(
             (lower - mu_l) / sigma_l, (upper - mu_l) / sigma_l, loc=mu_l, scale=sigma_l).rvs(int(pop_size/2))
@@ -345,27 +345,31 @@ def time_variant(initial_values, pop_vector, pop_size, time_step):
 
 
 #bifurcation diagram, used for bounded confidence pt. 2
-def bifurcation(pop):
+def bifurcation(pop_size,num_epsilon,rounds,distribution = 'uniform'):
     j = 0 #count of epsilon round 
-    
-    final_count = np.zeros([pop.num_epsilon])
-    
+    final_count = np.zeros([num_epsilon])
     final_values = [] #List with the final values obtained
-    
-    for eps in np.linspace(0.01,1,pop.num_epsilon): #scan the space of epsilon
-    
+
+    for eps in np.linspace(0.01,1,num_epsilon): #scan the space of epsilon
+        
+        pop = population(pop_size,rounds,distribution = distribution) #pop_size, rounds (starting with round 0)
+        pop.epsilon = eps*np.ones([pop_size])
+
         for i in range(pop.rounds):
-            
             #bounded confidence model            
             pop.opinions[:,i+1] = bounded_conf(pop.opinions[:,i], pop.pop_size, pop.epsilon)
+            
             
         #count number of unique opinions 
         final_values.append(np.unique(pop.opinions[:,-1]))
         final_count[j] = len(final_values[j])
         j += 1
-    
-        print(j/pop.num_epsilon)
+        print(j/num_epsilon)
+
     return final_values
+
+
+
 
 
 def gaussmf(x, sigma=1, scale=1, mean=0): #used for coevolution
@@ -686,49 +690,26 @@ print("DONE")
 #####
 
 #choose 1 of the 4 distributions
-distribution = "normal"  #truncated normal distribution
+#distribution = "normal"  #truncated normal distribution
 #distribution = "2normal"  #two nodes of a normal
 #distribution = "random"  #randomly distributed uniform  
-#distribution = "uniform"  #Uniformly spaced opinion 
+distribution = "uniform"  #Uniformly spaced opinion 
 
 population_size = 200
 
 #starting with round 0
-number_of_rounds = 40
+number_of_rounds = 100
 
 #set number of steps for epsilon
-num_epsilon = 20
-
-
-
-#####
-# initalize
-#####
-
-#create 2 populations (1 for bounded confidence, 1 for bifurcation)
-pop_bc = population(population_size,number_of_rounds,distribution) 
-pop_bi = population(population_size,number_of_rounds,distribution)
-
-
-#set epsilon values
-pop_bc.epsilon = 0.03*np.ones([pop_bc.pop_size])
-pop_bi.epsilon = 0.03*np.ones([pop_bi.pop_size])
-
-pop_bi.num_epsilon = num_epsilon
-
-    
+num_epsilon = 100
+ 
 
 #####
 # run
 #####
 
 #Bifurcation run 
-final_values = bifurcation(pop_bi)
-
-#bounded confidence model with symmetric epsilon run
-for i in range(pop_bc.rounds):
-    pop_bc.opinions[:,i+1] = bounded_conf(pop_bc.opinions[:,i], pop_bc.pop_size, pop_bc.epsilon)
-
+final_values = bifurcation(population_size,num_epsilon,number_of_rounds,distribution)
 
 
 #####
@@ -737,30 +718,21 @@ for i in range(pop_bc.rounds):
 
 #Bifurcation visualization 
 i = 0
-for eps in np.linspace(0.01,1,pop_bi.num_epsilon):
-    plt.scatter(eps*np.ones(len(final_values[i])),final_values[i],c=np.linspace(0.01,1,len(final_values[i])),cmap='jet',s=8)
+x, y = [], []
+#prepare data for plotting
+for eps in np.linspace(0.01,1,num_epsilon):
+    y.extend(final_values[i])
+    x.extend(eps*np.ones(len(final_values[i])))
     i += 1
-    plt.xlabel("$\epsilon$")
-    plt.ylabel("Opinion")
-    plt.title('Bifurcation Diagram - Population' + str(pop_bi.pop_size) )
+    
 
-plt.show()
-#plt.savefig('Gausian300.pdf')
-
-
-#Opinion dynamics 
-for i in range(pop_bc.pop_size):
-    plt.plot(pop_bc.opinions[i,:],c=plt.get_cmap("jet")(pop_bc.opinions[i,0])) #color according to initial y value
-    plt.xlabel("Iteration")
-    plt.ylabel("Opinion")
-    plt.title("Opinion Dynamics - Extended Model")
+plt.scatter(x,y,c=y,cmap='jet',s=10)
+plt.xlabel("$\epsilon$", size=26)
+plt.ylabel("Opinion", size=26)
+#plt.title('Bifurcation Diagram - Population' + str(pop_size) )
+plt.savefig('Symmetric Trial - ' + distribution + '.png')
 
 
-#Mean opinion
-plt.figure(2)
-plt.plot(np.mean(pop_bc.opinions,0))
-
-print("DONE")
 
 
 # %% 
