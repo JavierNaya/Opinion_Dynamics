@@ -1,17 +1,10 @@
-# -*- coding: utf-8 -*-
-"""
-Spyder Editor
-
-This is a temporary script file.
-"""
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
 Created on Wed Nov 25 17:22:54 2020
 @author: DJ LAV
-version: 4
+version: 5
 """
 # %% Description
 
