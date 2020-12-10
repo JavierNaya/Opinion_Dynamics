@@ -347,10 +347,9 @@ def time_variant(initial_values, pop_vector, pop_size, time_step):
 #bifurcation diagram, used for bounded confidence pt. 2
 def bifurcation(pop_size,num_epsilon,rounds,distribution = 'uniform'):
     j = 0 #count of epsilon round 
-    final_count = np.zeros([num_epsilon])
     final_values = [] #List with the final values obtained
 
-    for eps in np.linspace(0.01,1,num_epsilon): #scan the space of epsilon
+    for eps in np.linspace(0.01,0.5,num_epsilon): #scan the space of epsilon
         
         pop = population(pop_size,rounds,distribution = distribution) #pop_size, rounds (starting with round 0)
         pop.epsilon = eps*np.ones([pop_size])
@@ -362,13 +361,42 @@ def bifurcation(pop_size,num_epsilon,rounds,distribution = 'uniform'):
             
         #count number of unique opinions 
         final_values.append(np.unique(pop.opinions[:,-1]))
-        final_count[j] = len(final_values[j])
         j += 1
         print(j/num_epsilon)
 
     return final_values
 
+#bifurcation diagram for asymemtric bounded confidence in pt. 2
+def bifurcation_asymm(pop_size,num_epsilon,rounds,distribution = 'uniform'):
+    j = 0 #count of round for right side
+       
 
+    final_values_left = [] #List with the final values obtained
+    final_values_right = [] #list of lists for all results in left for each value of right 
+
+    
+    for eps_r in np.linspace(0.01,0.5,num_epsilon): #scan the space of epsilon right
+        final_values_left = [] #List with the final values obtained
+        
+        for eps_l in np.linspace(0.01,0.5,num_epsilon): #scan the space of epsilon left
+                
+            pop = population(pop_size,rounds,distribution = distribution) #pop_size, rounds (starting with round 0)
+            epsilon_not_sym = np.array([eps_l, eps_r])
+            pop.epsilon_not_sym = epsilon_not_sym
+        
+            for i in range(pop.rounds):
+                #bounded confidence model            
+                pop.opinions[:,i+1] = BC_asymm(pop.opinions[:,i], pop.pop_size, pop.epsilon_not_sym)
+                
+                
+            #count number of unique opinions 
+            final_values_left.append(np.unique(pop.opinions[:,-1]))
+        
+        final_values_right.append(final_values_left)
+        j += 1
+        print(j/num_epsilon)
+
+    return final_values_right
 
 
 
@@ -551,8 +579,8 @@ print("DONE")
 #choose 1 of the 4 models:
 #model = "bounded confidence"  #bounded confidence model with symmetric epsilon
 #model = "time variant"  #Time variant model
-model = "bounded confidence, asymmetric"  #Bounded confidence model with asymmetric epsilon, uniform epsilon
-#model = "bounded confidence, asymmetric, non uniform"   #Bounded opinon model with asymmetric, non uniform epsilon
+#model = "bounded confidence, asymmetric"  #Bounded confidence model with asymmetric epsilon, uniform epsilon
+model = "bounded confidence, asymmetric, non uniform"   #Bounded opinon model with asymmetric, non uniform epsilon
 
 population_size = 500
 
@@ -569,6 +597,7 @@ eps_r = 0.25 #right bound
 #set confidence interval (used 0.5)
 confidence_int = 0.5
 
+
 #set m (used 0.2)
 m = 0.2
 
@@ -579,7 +608,7 @@ m = 0.2
 
 #create population
 pop = population(population_size,number_of_rounds) #pop_size, rounds (starting with round 0)
-
+ 
 
 #add additional parameters:
 
@@ -596,7 +625,7 @@ pop.epsilon_uniform = epsilon_uniform
 
 #set asymmetrical epsilon values
 eps_l = 0.1 #left bound
-eps_r = 0.25 #right bound
+eps_r = 0.2 #right bound
 epsilon_not_sym = np.array([eps_l, eps_r])
 pop.epsilon_not_sym = epsilon_not_sym
 
@@ -695,42 +724,76 @@ print("DONE")
 #distribution = "random"  #randomly distributed uniform  
 distribution = "uniform"  #Uniformly spaced opinion 
 
-population_size = 200
+#choose 1 of the 3 models:
+#model = "bounded confidence"  #bounded confidence model with symmetric epsilon
+model = "bounded confidence, asymmetric"  #Bounded confidence model with asymmetric epsilon, uniform epsilon
+#model = "bounded confidence, asymmetric, non uniform"   #Bounded opinon model with asymmetric, non uniform epsilon
+
+
+
+population_size = 50
 
 #starting with round 0
 number_of_rounds = 100
 
 #set number of steps for epsilon
-num_epsilon = 100
+num_epsilon = 50
  
 
 #####
 # run
 #####
 
-#Bifurcation run 
-final_values = bifurcation(population_size,num_epsilon,number_of_rounds,distribution)
-
+if model == "bounded confidence":
+    final_values = bifurcation(population_size,num_epsilon,number_of_rounds,distribution)
+    
+elif model == "bounded confidence, asymmetric":
+    final_values = bifurcation_asymm(population_size,num_epsilon,number_of_rounds,distribution)
 
 #####
 # visualize
 #####
 
 #Bifurcation visualization 
-i = 0
-x, y = [], []
-#prepare data for plotting
-for eps in np.linspace(0.01,1,num_epsilon):
-    y.extend(final_values[i])
-    x.extend(eps*np.ones(len(final_values[i])))
-    i += 1
-    
 
-plt.scatter(x,y,c=y,cmap='jet',s=10)
-plt.xlabel("$\epsilon$", size=26)
-plt.ylabel("Opinion", size=26)
-#plt.title('Bifurcation Diagram - Population' + str(pop_size) )
-plt.savefig('Symmetric Trial - ' + distribution + '.png')
+if model == "bounded confidence":
+    i = 0
+    x, y = [], []
+    #prepare data for plotting
+    for eps in np.linspace(0.01,0.5,num_epsilon):
+        y.extend(final_values[i])
+        x.extend(eps*np.ones(len(final_values[i])))
+        i += 1
+    
+    
+    plt.scatter(x,y,c=y,cmap='jet',s=10)
+    plt.xlabel("$\epsilon$", size=26)
+    plt.ylabel("Opinion", size=26)
+    plt.ylim(0, 1)
+    plt.savefig('Symmetric - ' + distribution + '.png')
+    
+elif model == "bounded confidence, asymmetric":
+    x, y, z = [], [], []
+    j = 0 
+    for eps_r in np.linspace(0.01,0.5,num_epsilon):
+        i = 0
+        for eps_l in np.linspace(0.01,0.5,num_epsilon):
+            x.extend(eps_l*np.ones(len(final_values[j][i])))
+            y.extend(eps_r*np.ones(len(final_values[j][i])))
+            z.extend(final_values[j][i])
+            i += 1
+        j +=1
+    
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x,y,z,c=z, cmap ='jet',s=8)
+    ax.set_xlabel("$\epsilon_{left}$", size=14)
+    ax.set_ylabel("$\epsilon_{right}$", size=14)
+    ax.set_zlabel("Opinion",size
+                  = 14)
+    plt.title('Asymmetric - ' + distribution)
+    plt.savefig('Asymmetric - ' + distribution + '.png')
 
 
 
@@ -743,12 +806,12 @@ plt.savefig('Symmetric Trial - ' + distribution + '.png')
 #####
 # setup
 #####
-k = 4
-gamma = 10
-phi = 0.1
+k = 100
+gamma = 100
+phi = .2
 
 #number of people
-N=100
+N=1000
 
 #####
 # initalize & run
@@ -759,6 +822,7 @@ G = round(N/gamma)
 #opinions of people
 x = [random.randint(1, G) for i in range(N)]
 m = np.zeros((N, N))
+
 
 
 l = M
@@ -838,22 +902,48 @@ evo_hist = evo[-1]
 #####
 
 
-plt.figure()
-plt.hist(evo_hist, 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
-plt.xlabel("Opinions")
-plt.ylabel("Occurences")
-plt.title("t= "+str(len(evo)-1))
+# plt.figure()
+# plt.hist(evo_hist, 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
+# plt.xlabel("Opinions")
+# plt.ylabel("Occurences")
+# plt.title("t= "+str(len(evo)-1))
+# plt.show()
+
+
+# fig = plt.figure()
+# axes = plt.gca()
+# axes.set_ylim([0, 50])
+# plt.xlabel("Opinions")
+# plt.ylabel("Occurences")
+# plt.title("t= 0")
+# hist = plt.hist(evo[0], 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
+
+
+# animation = animation.FuncAnimation(fig, update_hist, fargs=(evo, ) )
+# plt.show()
+
+#%%
+import seaborn as sns
+
+X = np.zeros([N,len(evo)])  
+
+#transform opinion list into array 
+for i in range(N):
+    for j in range(len(evo)):
+        X[i][j] = evo[j][i]
+fig = plt.figure()     
+sns.heatmap(X)
 plt.show()
 
-
-fig = plt.figure()
-axes = plt.gca()
-axes.set_ylim([0, 50])
-plt.xlabel("Opinions")
-plt.ylabel("Occurences")
-plt.title("t= 0")
-hist = plt.hist(evo[0], 10, range=[0.5, 10.5], edgecolor='black', linewidth=0.7)
-
-
-animation = animation.FuncAnimation(fig, update_hist, fargs=(evo, ) )
+#maps into ammount of opinons per time 
+Opinion_count = np.zeros([G,len(evo)])
+for i in range(len(evo)):
+    values, count = np.unique(X[:,i], return_counts = True)
+    for val in values:
+        Opinion_count[int(val)-1,i] = count[int(np.where(values == val)[0])]
+                                     
+        
+fig = plt.figure()  
+sns.heatmap(Opinion_count)
 plt.show()
+        
