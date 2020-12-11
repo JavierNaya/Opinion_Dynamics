@@ -396,6 +396,40 @@ def bifurcation_asymm(pop_size,num_epsilon,rounds,distribution = 'uniform'):
     return final_values_right
 
 
+#bifurcation diagram for asymemtric bounded confidence in pt. 2
+def bifurcation_asymm_per(pop_size,num_epsilon,rounds,distribution = 'uniform'):
+    l = 0 #count of round for right side
+       
+
+    final_values_epsbar = [] #List with the final values obtained
+    final_values_m = [] #list of lists for all results in left for each value of right 
+
+    
+    for val_m in np.linspace(0.01,1,num_epsilon): #scan the space of epsilon right
+        final_values_epsbar = [] #List with the final values obtained
+        global m
+        m = val_m
+        for j in np.linspace(0.05,1,num_epsilon): #scan the space of epsilon left
+            global confidence_int
+            confidence_int = j
+            pop = population(pop_size,rounds,distribution = distribution) #pop_size, rounds (starting with round 0)
+        
+            for i in range(pop.rounds):
+                #bounded confidence model            
+                pop.opinions[:,i+1] = BC_asymm_pers(pop.opinions[:,i], pop.pop_size)
+                
+            
+            print(m,confidence_int)
+            #count number of unique opinions 
+            final_values_epsbar.append(np.unique(pop.opinions[:,-1]))
+        
+        final_values_m.append(final_values_epsbar)
+        l += 1
+        print(l/num_epsilon)
+
+    return final_values_m
+
+
 
 def gaussmf(x, sigma=1, scale=1, mean=0): #used for coevolution
     return scale * np.exp(-np.square(x - mean) / (2 * sigma ** 2))
@@ -553,7 +587,7 @@ plt.show()
 #     np.save(f,celeb_pop.opinions)
 
 
-
+    
 #to retrieve:
 # with open('celeb_0.npy','rb') as f:
 #     a=np.load(f) #control_pop.mat
@@ -579,10 +613,10 @@ print("DONE")
 #model = "bounded confidence, asymmetric"  #Bounded confidence model with asymmetric epsilon, uniform epsilon
 model = "bounded confidence, asymmetric, non uniform"   #Bounded opinon model with asymmetric, non uniform epsilon
 
-population_size = 500
+population_size = 50
 
 #starting with round 0
-number_of_rounds = 10
+number_of_rounds = 20
 
 #set uniform epsilon
 epsilon_uniform = 0.25
@@ -592,11 +626,12 @@ eps_l = 0.1 #left bound
 eps_r = 0.25 #right bound
 
 #set confidence interval (used 0.5)
-confidence_int = 0.5
+confidence_int = 1
 
 
 #set m (used 0.2)
-m = 0.2
+m = 0.9797959183673469
+
 
 
 #####
@@ -662,6 +697,7 @@ for i in range(pop.rounds):
 
 
 #Plot opinion evolution
+fig = plt.figure()
 for i in range(pop.pop_size):
     plt.plot(pop.opinions[i,:],c=plt.get_cmap("jet")(pop.opinions[i,0])) #color according to initial y value
     
@@ -683,6 +719,7 @@ plt.xlabel("Rounds")
 plt.ylabel("Opinion")
 plt.show()
 
+fig = plt.figure()
 #Plot change in opinion
 for i in range(pop.pop_size):
     plt.plot(pop.delta_op[i,1:],c=plt.get_cmap("jet")(pop.delta_op[i,0])) #color according to initial y value
@@ -724,18 +761,18 @@ distribution = "uniform"  #Uniformly spaced opinion
 
 #choose 1 of the 3 models:
 #model = "bounded confidence"  #bounded confidence model with symmetric epsilon
-model = "bounded confidence, asymmetric"  #Bounded confidence model with asymmetric epsilon, uniform epsilon
-#model = "bounded confidence, asymmetric, non uniform"   #Bounded opinon model with asymmetric, non uniform epsilon
+#model = "bounded confidence, asymmetric"  #Bounded confidence model with asymmetric epsilon, uniform epsilon
+model = "bounded confidence, asymmetric, non uniform"   #Bounded opinon model with asymmetric, non uniform epsilon
 
 
 
 population_size = 50
 
 #starting with round 0
-number_of_rounds = 100
+number_of_rounds = 80
 
 #set number of steps for epsilon
-num_epsilon = 50
+num_epsilon = 40
 
 #####
 # run
@@ -747,6 +784,8 @@ if model == "bounded confidence":
 elif model == "bounded confidence, asymmetric":
     final_values = bifurcation_asymm(population_size,num_epsilon,number_of_rounds,distribution)
 
+elif model == "bounded confidence, asymmetric, non uniform":
+    final_values = bifurcation_asymm_per(population_size,num_epsilon,number_of_rounds,distribution)
 
 #####
 # visualize
@@ -792,7 +831,29 @@ elif model == "bounded confidence, asymmetric":
     plt.title('Asymmetric - ' + distribution)
     plt.savefig('Asymmetric - ' + distribution + '.png')
 
-
+elif model == "bounded confidence, asymmetric, non uniform":
+    x, y, z = [], [], []
+    j = 0 
+    for m_val in np.linspace(0.01,1,num_epsilon):
+        i = 0
+        for epsbar in np.linspace(0.01,1,num_epsilon):
+            x.extend(epsbar*np.ones(len(final_values[j][i])))
+            y.extend(m_val*np.ones(len(final_values[j][i])))
+            z.extend(final_values[j][i])
+            i += 1
+        j +=1
+    
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x,y,z,c=z, cmap ='jet',s=8)
+    ax.set_xlabel("$\overline{\epsilon}$", size=14)
+    ax.set_ylabel("$m$", size=14)
+    ax.set_zlabel("Opinion",size
+                  = 14)
+    plt.title('Asymmetric Dependent- ' + distribution)
+    plt.savefig('Asymmetric Dependent- ' + distribution + '.png')
+    
 
 
 
@@ -807,7 +868,7 @@ elif model == "bounded confidence, asymmetric":
 
 k = 4
 gamma = 10
-phi = 0.1
+phi = 0.25
 
 #number of people
 N=100
@@ -834,7 +895,7 @@ while l>0:
     l=l-1
 
 evo = [list(x)]
-t_end = 1000
+t_end = 20000
 t=0
 
 while t<=t_end:
