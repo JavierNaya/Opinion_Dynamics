@@ -5,7 +5,7 @@
 Created on Wed Nov 25 17:22:54 2020
 
 @author: DJ LAV
-version: 5
+version: 6
 """
 # %% Description
 
@@ -16,7 +16,7 @@ Then there are 4 sections containing the different models used in the project:
     1. classical model: celebrities
     2. bounded confidence, pt. 1
     3. bounded confidence, pt. 2 (using different initial opinion distribution)
-    4. YYY
+    4. coevolution network
 
 In each of those sections you can find a setup part, this is where you need to specify all the parameters you want to use to run the code. Everything else can be left alone!
 To use any model, just run the entire section after choosing the parameters.
